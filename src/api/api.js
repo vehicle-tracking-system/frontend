@@ -19,14 +19,20 @@ async function vehicleList (token) {
   const config = {
     headers: {
       authorization: token
+    },
+    params: {
+      page: null,
+      'page-size': null
     }
   }
-  let res = null
-  await axios.post('/vehicles', {}, config).then(response => {
-    const payload = JSON.parse(response.data)
-    res = payload.data.map(a => a.vehicle)
+  const res = new Map()
+  await axios.get('/vehicles', config).then(response => {
+    const payload = response.data
+    payload.data.forEach(a => res.set(a.vehicle.id, a.vehicle))
   }).catch(error => {
+    console.log(error)
     if (error.response !== undefined) {
+      console.log(error.response)
       switch (error.response.status) {
         case 403:
           throw new ApiException('You don\'t have permissions to view list of vehicles and their actual positions!', error.response.status)
@@ -44,12 +50,14 @@ async function lastPosition (vehicle, token) {
   const config = {
     headers: {
       authorization: token
+    },
+    params: {
+      id: vehicle.id
     }
   }
-  return await axios.get('/vehicle/' + vehicle.id + '/position', config)
+  return await axios.get('/vehicle/position', config)
     .then(response => {
-      console.log(response.data)
-      const obj = JSON.parse(response.data)
+      const obj = response.data
       return new Position(obj.id, obj.latitude, obj.longitude, obj.speed, obj.timestamp, obj.trackId, obj.vehicleId)
     }).catch(error => {
       if (error.response !== undefined) {
@@ -65,30 +73,4 @@ async function lastPosition (vehicle, token) {
     })
 }
 
-// async function getAllTrackers (token) {
-//   const config = {
-//     headers: {
-//       authorization: token
-//     }
-//   }
-//
-//   return await axios.get('/vehicle/' + vehicle.id + '/position', config)
-//     .then(response => {
-//       console.log(response.data)
-//       const obj = JSON.parse(response.data)
-//       return new Position(obj.id, obj.latitude, obj.longitude, obj.speed, obj.timestamp, obj.trackId, obj.vehicleId)
-//     }).catch(error => {
-//       if (error.response !== undefined) {
-//         switch (error.response.status) {
-//           case 403:
-//             throw new ApiException('You don\'t have permissions to view vehicle positions history!', error.response.status)
-//           default:
-//             throw new ApiException('Unknown API error', error.response.status)
-//         }
-//       } else {
-//         throw new ApiException('Could not connect to server', -1)
-//       }
-//     })
-// }
-
-export { vehicleList, lastPosition, ApiException, Position }
+export { ApiException, Position, vehicleList, lastPosition }
