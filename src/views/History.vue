@@ -23,24 +23,49 @@
       v-col(cols="12" md="9" xs="12" sm="12")
         div(class="map")
           l-map(
+            ref="mymap"
             style="height: 85vh"
             :zoom="zoom"
             :center="center"
             :bounds="bounds")
             l-tile-layer(:url="url")
+            l-control
+              v-chip
+                v-switch(
+                  v-model="waypointsSwitch"
+                  flat
+                  :label="`Waypoints`"
+                ) Show waypoints
+            l-control
+              v-progress-circular(v-if="loadingTracks"
+                class="text-center"
+                indeterminate
+                :size=70
+                :width="7"
+                color="primary"
+              )
             l-layer-group(layer-type="overlay" name="route")
               l-polyline(
                 v-for="item in polylines"
                 :key="item.id"
                 :lat-lngs="item.points"
                 :visible="true"
-                @click="alert(item)"
               )
-              l-marker(v-for="(marker, index) in markers" :key="marker.id" :lat-lng="marker.value" :icon="marker.icon")
+              l-marker(v-if="start" :lat-lng="start" :icon="start_icon")
+              l-marker(v-if="end" :lat-lng="end" :icon="end_icon")
+              l-circle-marker(v-if="waypointsSwitch" v-for="(marker, index) in markers" :key="marker.id" :lat-lng="marker.value" :radius="2" :icon="marker.icon")
                 l-tooltip(:options="{ permanent: false, interactive: true }")
                   div {{ marker.time }}
                   div {{ marker.speed }}
                   div {{ marker.value.lat }} {{ marker.value.lng }}
+            l-control(:position="'bottomright'" class="icons-credits")
+              div Icons made by
+                a(href="https://www.flaticon.com/authors/kiranshastry" title="Kiranshastry") Kiranshastry from
+                a(href="https://www.flaticon.com/" title="Flaticon")  www.flaticon.com
+            l-control(
+              :position="'bottomleft'"
+              class="custom-control-watermark"
+            ) Vehicle tracking system
 
 </template>
 
@@ -56,10 +81,12 @@ import {
   LPolyline,
   LPopup,
   LTileLayer,
-  LTooltip
+  LTooltip,
+  LControl,
+  LCircleMarker
 } from 'vue2-leaflet'
 import { icon, latLng, latLngBounds } from 'leaflet'
-import axios from 'axios'
+import * as api from '@/api/vehicle'
 
 export default {
   name: 'Vehicle',
@@ -74,7 +101,9 @@ export default {
     LControlZoom,
     LControlAttribution,
     LControlScale,
-    LControlLayers
+    LControlLayers,
+    LControl,
+    LCircleMarker
   },
   data () {
     return {
@@ -92,19 +121,36 @@ export default {
         iconSize: [32, 37],
         iconAnchor: [16, 37]
       }),
-      pointIcon: icon({
+      defaultPointIcon: icon({
         iconUrl: require('../assets/dot.svg'),
         iconSize: [13, 15],
         iconAnchor: [4, 7]
       }),
+      emptyIcon: icon({
+        iconUrl: require('../assets/dot.svg'),
+        iconSize: [1, 1],
+        iconAnchor: [4, 7]
+      }),
+      start: null,
+      end: null,
       polylines: [],
       markers: [],
       points: [],
       dates: ['', ''],
+      lastDates: ['', ''],
       vehicleId: null,
-      totalDistance: 0
+      totalDistance: 0,
+      radius: 2,
+      waypointsSwitch: true,
+      loadingTracks: false,
+      mapRef: null
     }
   },
+  mounted () {
+    const map = this.$refs.mymap.mapObject
+    map.addControl(new window.L.Control.Fullscreen())
+  },
+  watch: {},
   computed: {
     dateRangeText () {
       return this.dates.join(' ~ ')
@@ -123,8 +169,6 @@ export default {
     this.dates = [date, date]
   },
   methods: {
-    loadPolyLine: function () {
-    },
     async dateSelected () {
       this.loadingTracks = true
       api.vehicleHistory(this.vehicleId, this.dates[0], this.dates[1]).then(response => {
@@ -136,25 +180,13 @@ export default {
         }
         this.polylines = [{
           id: 'route',
-          points: payload.map(point => latLng(point.latitude, point.longitude)),
+          points: response.map(point => latLng(point.latitude, point.longitude)),
           visible: true
         }]
-        const start = response.data[response.data.length - 1]
-        const end = response.data[0]
-        start.icon = this.start_icon
-        end.icon = this.end_icon
-        this.addMarkers([start, end])
-        this.addMarkers(response.data)
+        this.start = latLng(response[response.length - 1].latitude, response[response.length - 1].longitude)
+        this.end = latLng(response[0].latitude, response[0].longitude)
+        this.addMarkers(response)
         this.fitPolyline()
-      }).catch(error => {
-        console.log(error)
-        switch (error.response.status) {
-          case 403:
-            this.$snotify.error('You don\'t have permissions to view vehicle positions history!', { timeout: 10000 })
-            break
-          default:
-            this.$snotify.error('Unexpected error occurred: ' + error, { timeout: 10000 })
-        }
       })
     },
     addMarkers: function (payload) {
@@ -165,8 +197,9 @@ export default {
           id: payload[m].id,
           value: latLng(payload[m].latitude, payload[m].longitude),
           time: new Date(payload[m].timestamp).toLocaleString('cs-CZ'),
-          speed: payload[m].speed + ' km/h',
-          icon: payload[m].icon === undefined ? this.pointIcon : payload[m].icon
+          speed: payload[m].speed.toFixed(2) + ' km/h',
+          icon: payload[m].icon === undefined ? null : payload[m].icon
+
         })
         if (m !== '0') {
           this.totalDistance += this.markers[m].value.distanceTo(this.markers[m - 1].value)
@@ -183,4 +216,8 @@ export default {
 <style lang="sass" scoped>
 .map
   margin-left: 12px
+
+.spinner
+  padding-top: 50%
+  padding-left: 50%
 </style>
