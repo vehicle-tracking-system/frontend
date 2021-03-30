@@ -43,7 +43,11 @@ export default {
     VehiclesList,
     VList
   },
-  watch: {},
+  beforeRouteLeave (to, from, next) {
+    this.connection.close()
+    this.connection = null
+    next()
+  },
   data () {
     return {
       loading: true,
