@@ -14,7 +14,12 @@ import { LMap, LMarker, LTileLayer, LTooltip, LFeatureGroup } from 'vue2-leaflet
 import { Icon } from 'leaflet'
 
 axios.defaults.withCredentials = true
-axios.defaults.baseURL = 'http://localhost:8080'
+axios.defaults.baseURL = process.env.VUE_APP_BACKEND_URL
+
+const token = store.getters.StateToken
+if (token) {
+  axios.defaults.headers.common.Authorization = token
+}
 
 Vue.config.productionTip = false
 

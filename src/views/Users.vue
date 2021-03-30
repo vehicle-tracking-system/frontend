@@ -37,7 +37,7 @@ export default {
   },
   methods: {
     async loadUserList () {
-      api.getAllUsers(this.$store.getters.StateToken).then(r => {
+      api.getAllUsers().then(r => {
         this.users = r
         this.usersLoading = false
       }).catch(err => {
@@ -46,7 +46,7 @@ export default {
       })
     },
     async updateUser (user, index) {
-      api.editUser(user, this.$store.getters.StateToken).then(updated => {
+      api.editUser(user).then(updated => {
         Object.assign(this.users[index], updated)
         this.$snotify.success('User ' + user.name + ' successfully updated.')
       }).catch(e => {
@@ -55,7 +55,7 @@ export default {
       })
     },
     async createUser (user) {
-      api.newUser(user, this.$store.getters.StateToken).then(usr => {
+      api.newUser(user).then(usr => {
         this.users.push(usr)
       }).catch(e => {
         this.$snotify.error('Creating user error: ' + e.toString())

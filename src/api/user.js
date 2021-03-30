@@ -1,11 +1,8 @@
 import axios from 'axios'
 import { ApiException } from '@/api/api'
 
-async function getAllUsers (token) {
+async function getAllUsers () {
   const config = {
-    headers: {
-      authorization: token
-    },
     params: {
       page: null,
       'page-size': null
@@ -31,14 +28,9 @@ async function getAllUsers (token) {
   return res
 }
 
-async function editUser (user, token) {
-  const config = {
-    headers: {
-      authorization: token
-    }
-  }
+async function editUser (user) {
   let res = null
-  await axios.post('/user', { user: user }, config).then(response => {
+  await axios.post('/user', { user: user }).then(response => {
     res = response.data
   }).catch(error => {
     if (error.response !== undefined) {
@@ -55,14 +47,9 @@ async function editUser (user, token) {
   return res
 }
 
-async function newUser (user, token) {
-  const config = {
-    headers: {
-      authorization: token
-    }
-  }
+async function newUser (user) {
   let res = null
-  await axios.post('/user/new', user, config).then(response => {
+  await axios.post('/user/new', user).then(response => {
     res = response.data
   }).catch(error => {
     if (error.response !== undefined) {
@@ -79,4 +66,23 @@ async function newUser (user, token) {
   return res
 }
 
-export { getAllUsers, editUser, newUser }
+async function deleteUser (user) {
+  return await axios.post('/user/delete', { user: user })
+    .then(response => {
+      const payload = response.data
+      return payload
+    }).catch(error => {
+      if (error.response !== undefined) {
+        switch (error.response.status) {
+          case 403:
+            throw new ApiException('You don\'t have permissions to view vehicle positions history!', error.response.status)
+          default:
+            throw new ApiException('Unknown API error', error.response.status)
+        }
+      } else {
+        throw new ApiException('Could not connect to server', -1)
+      }
+    })
+}
+
+export { getAllUsers, editUser, newUser, deleteUser }

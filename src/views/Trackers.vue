@@ -43,7 +43,7 @@ export default {
   },
   methods: {
     async loadTrackerList () {
-      api.getAllTrackers(this.$store.getters.StateToken).then(r => {
+      api.getAllTrackers().then(r => {
         this.trackers = r
         this.trackersLoading = false
       }).catch(err => {
@@ -52,7 +52,7 @@ export default {
       })
     },
     async loadVehicleList () {
-      vehicleApi.vehicleList(this.$store.getters.StateToken).then(r => {
+      vehicleApi.vehicleList().then(r => {
         this.vehicles = r
         this.vehiclesLoading = false
       }).catch(err => {
@@ -61,7 +61,7 @@ export default {
       })
     },
     async persistTracker (tracker) {
-      api.newTracker(tracker, this.$store.getters.StateToken).then(r => {
+      api.newTracker(tracker).then(r => {
         this.trackers.push(r)
       }).catch(e => {
         this.$snotify.error('Creating tracker error: ' + e.toString())
@@ -69,7 +69,7 @@ export default {
       })
     },
     async updateTracker (tracker, index) {
-      api.updateTracker(tracker, this.$store.getters.StateToken).then(updated => {
+      api.updateTracker(tracker).then(updated => {
         Object.assign(this.trackers[index], updated)
         this.$snotify.success('Tracker ' + tracker.name + ' successfully updated.')
       }).catch(e => {
@@ -78,15 +78,16 @@ export default {
       })
     },
     async deleteTracker (tracker, index) {
-      api.deleteTracker(tracker, this.$store.getters.StateToken).then(_ => {
+      api.deleteTracker(tracker).then(_ => {
+        this.trackers.splice(index, 1)
         this.$snotify.success('Tracker ' + tracker.name + ' successfully deleted.')
       }).catch(e => {
-        this.$snotify.error('Updating tracker error: ' + e.toString())
+        this.$snotify.error('Deleting tracker error: ' + e.toString())
         console.error(e)
       })
     },
     async revokeToken (tracker, index) {
-      api.revokeToken(tracker, this.$store.getters.StateToken).then(updated => {
+      api.revokeToken(tracker).then(updated => {
         console.log(index)
         Object.assign(this.trackers[index], updated)
         this.$snotify.success(tracker.name + ' token successfully revoked.')

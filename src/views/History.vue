@@ -126,28 +126,12 @@ export default {
     loadPolyLine: function () {
     },
     async dateSelected () {
-      const config = {
-        headers: {
-          authorization: this.$store.getters.StateToken
-        }
-      }
-      let since = new Date(this.dates[0])
-      let until = new Date(this.dates[1])
-      // sort dates - lower first
-      if (since > until) {
-        const tmp = until
-        until = since
-        since = tmp
-      }
-      until.setHours(23, 59, 59, 999)
-      await axios.post('/vehicle/history', {
-        vehicleId: this.vehicleId,
-        since: since.toISOString(),
-        until: until.toISOString()
-      }, config).then(response => {
-        const payload = (response.data)
-        if (payload.length === 0) {
-          this.$snotify.warning('No data available for the selected date period:\n' + since.toLocaleString('cs-CZ') + ' ~ ' + until.toLocaleString('cs-CZ'))
+      this.loadingTracks = true
+      api.vehicleHistory(this.vehicleId, this.dates[0], this.dates[1]).then(response => {
+        this.loadingTracks = false
+
+        if (response.length === 0) {
+          this.$snotify.warning('No data available for the selected date period:\n' + this.dateRangeText)
           return
         }
         this.polylines = [{

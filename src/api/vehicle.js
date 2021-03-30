@@ -1,17 +1,13 @@
 import axios from 'axios'
 import { ApiException } from '@/api/api'
 
-async function vehicleList (token) {
+async function vehicleList () {
   const config = {
-    headers: {
-      authorization: token
-    },
     params: {
       page: null,
       'page-size': null
     }
   }
-  // const res = new Map()
   let res = []
   await axios.get('/vehicles', config).then(response => {
     const payload = response.data
@@ -34,12 +30,7 @@ async function vehicleList (token) {
   return res
 }
 
-async function vehicleHistory (vehicleId, since, until, token) {
-  const config = {
-    headers: {
-      authorization: token
-    }
-  }
+async function vehicleHistory (vehicleId, since, until) {
   let s = new Date(since)
   let u = new Date(until)
   // sort dates - lower first
@@ -54,7 +45,7 @@ async function vehicleHistory (vehicleId, since, until, token) {
     vehicleId: vehicleId,
     since: s.toISOString(),
     until: u.toISOString()
-  }, config).then(response => {
+  }).then(response => {
     res = response.data
   }).catch(error => {
     console.log(error)

@@ -1,11 +1,8 @@
 import axios from 'axios'
 import { ApiException } from '@/api/api'
 
-async function getAllTrackers (token) {
+async function getAllTrackers () {
   const config = {
-    headers: {
-      authorization: token
-    },
     params: {
       page: null,
       'page-size': null
@@ -30,14 +27,9 @@ async function getAllTrackers (token) {
     })
 }
 
-async function newTracker (tracker, token) {
-  const config = {
-    headers: {
-      authorization: token
-    }
-  }
+async function newTracker (tracker) {
   let res = null
-  await axios.post('/tracker/new', tracker, config).then(response => {
+  await axios.post('/tracker/new', tracker).then(response => {
     res = response.data
   }).catch(error => {
     if (error.response !== undefined) {
@@ -54,14 +46,9 @@ async function newTracker (tracker, token) {
   return res
 }
 
-async function deleteTracker (tracker, token) {
-  const config = {
-    headers: {
-      authorization: token
-    }
-  }
+async function deleteTracker (tracker) {
   let res = null
-  await axios.post('/tracker/delete', tracker, config).then(response => {
+  await axios.post('/tracker/delete', tracker).then(response => {
     res = response.data
   }).catch(error => {
     if (error.response !== undefined) {
@@ -78,11 +65,8 @@ async function deleteTracker (tracker, token) {
   return res
 }
 
-async function updateTracker (tracker, token) {
+async function updateTracker (tracker) {
   const config = {
-    headers: {
-      authorization: token
-    }
   }
   let res = null
   await axios.post('/tracker', tracker, config).then(response => {
@@ -103,13 +87,8 @@ async function updateTracker (tracker, token) {
 }
 
 async function revokeToken (tracker, token) {
-  const config = {
-    headers: {
-      authorization: token
-    }
-  }
   let res = null
-  await axios.post('/tracker/revoke', tracker, config).then(response => {
+  await axios.post('/tracker/revoke', tracker).then(response => {
     res = response.data
   }).catch(error => {
     if (error.response !== undefined) {
