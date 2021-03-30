@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Vehicles from '@/views/Vehicles'
+import Home from '@/views/Home'
 import Login from '@/views/Login'
 import User from '@/views/User'
 import History from '@/views/History'
@@ -12,7 +13,9 @@ Vue.use(VueRouter)
 
 const routes = [
   {
-    path: '/'
+    path: '/',
+    name: 'Home',
+    component: Home
   },
   {
     path: '/about',

@@ -1,8 +1,11 @@
-<template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-  </div>
+<template lang="pug">
+  v-container(fluid)
+    h1
+      | Welcome to vehicle tracking system
+    p If you already have an account, you can login !{' '}
+      router-link(link :to="'/login'") here
+      |  (or click the head in top right corner).
+
 </template>
 
 <script>
