@@ -82,7 +82,7 @@ export default {
     initWs: async function () {
       await this.loadVehicleList()
       if (this.loadingErr) return false
-      this.connection = new WebSocket('ws://localhost:8080/ws')
+      this.connection = new WebSocket(process.env.VUE_APP_WS_BACKEND_URL)
       this.connection.onopen = () => {
         this.$snotify.success('Successfully connected to the server', { timeout: 3000 })
       }
