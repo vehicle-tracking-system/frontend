@@ -256,11 +256,9 @@ export default {
     deleteItem (item) {
       this.editedIndex = this.items.indexOf(item)
       this.editedItem = item
-      // this.editedItem = Object.assign({}, item)
       this.dialogDelete = true
     },
     deleteItemConfirm () {
-      this.items.splice(this.editedIndex, 1)
       this.$emit('deleteTracker', this.editedItem.tracker, this.editedIndex)
       this.closeDelete()
     },
