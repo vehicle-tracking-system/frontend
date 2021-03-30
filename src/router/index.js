@@ -4,6 +4,7 @@ import Vehicles from '@/views/Vehicles'
 import Home from '@/views/Home'
 import Login from '@/views/Login'
 import User from '@/views/User'
+import Users from '@/views/Users'
 import History from '@/views/History'
 import NotFound from '@/views/NotFound'
 import Trackers from '@/views/Trackers'
@@ -58,6 +59,20 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/users',
+    name: 'Users',
+    component: Users,
+    meta: {
+      requiresAuth: true,
+      roles: ['READER']
+    }
+  },
+  {
+    path: '/unatuhorized',
+    name: 'Unautorized',
+    component: NotFound
+  },
+  {
     path: '*',
     name: 'NotFound',
     component: NotFound,
@@ -73,6 +88,21 @@ const router = new VueRouter({
 
 router.beforeEach((to, from, next) => {
   if (to.matched.some((record) => record.meta.requiresAuth)) {
+    if (to.meta.roles) { // route require some role(s)
+      let isAuthorized = true
+      to.meta.roles.forEach(role => {
+        if (!store.getters.StateUser.roles.includes(role)) {
+          isAuthorized = false
+        }
+      })
+      if (isAuthorized) {
+        next()
+        return
+      } else {
+        next('/unauthorized')
+        return
+      }
+    }
     if (store.getters.isAuthenticated) {
       next()
       return

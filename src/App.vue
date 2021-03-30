@@ -1,13 +1,14 @@
 <template>
   <v-app>
-      <v-app-bar app color="primary" dark elevation="0">
+    <v-app-bar app color="primary" dark elevation="0">
       <v-app-bar-nav-icon @click.stop="sidebarMenu = !sidebarMenu"></v-app-bar-nav-icon>
       <v-spacer></v-spacer>
-        <v-btn icon href="/login">
-          <v-icon>mdi-account</v-icon>
-        </v-btn>
+      <v-btn icon :to="'/login'">
+        <v-icon>mdi-account</v-icon>
+      </v-btn>
     </v-app-bar>
     <v-navigation-drawer
+      v-if="isLoggedIn"
       v-model="sidebarMenu"
       app
       floating
@@ -104,9 +105,9 @@ export default {
     sidebarMenu: false,
     toggleMini: true,
     items: [
-      { title: 'Home', href: '/user', icon: 'mdi-home-outline' },
       { title: 'Live positions', href: '/vehicles', icon: 'mdi-map-search' },
-      { title: 'Trackers', href: '/trackers', icon: 'mdi-antenna' }
+      { title: 'Trackers', href: '/trackers', icon: 'mdi-antenna' },
+      { title: 'Users', href: '/users', icon: 'mdi-account-multiple' }
       // { title: 'Components', href: '/comp', icon: 'mdi-palette-swatch' },
       // { title: 'Customers', href: '/customers', icon: 'mdi-account-search-outline' },
       // { title: 'Orders', href: '/orders', icon: 'mdi-bus-clock' },
@@ -115,3 +116,6 @@ export default {
   })
 }
 </script>
+
+<style scoped lang="scss">
+</style>
