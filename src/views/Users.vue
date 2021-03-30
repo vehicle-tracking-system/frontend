@@ -12,7 +12,7 @@
       v-if="!usersLoading"
       :users="users"
       @newUser="createUser"
-      @deleteUser=""
+      @deleteUser="deleteUser"
       @updateUser="updateUser"
     )
 </template>
@@ -59,6 +59,15 @@ export default {
         this.users.push(usr)
       }).catch(e => {
         this.$snotify.error('Creating user error: ' + e.toString())
+        console.error(e)
+      })
+    },
+    async deleteUser (user, index) {
+      api.deleteUser(user).then(usr => {
+        this.users.splice(index, 1)
+        this.$snotify.success('User ' + user.name + ' successfully deleted.')
+      }).catch(e => {
+        this.$snotify.error('Deleting user error: ' + e.toString())
         console.error(e)
       })
     }

@@ -150,20 +150,20 @@ export default {
   },
   methods: {
     editItem (item) {
+      if (this.dialogDelete) return
       this.editedIndex = this.users.indexOf(item)
       this.editedItem = Object.assign({}, item)
       this.dialog = true
     },
     deleteItem (item) {
       this.editedIndex = this.users.indexOf(item)
-      const deletedItem = this.editedItem
-      this.editedItem = Object.assign({}, item)
+      this.editedItem = item
+      // this.editedItem = Object.assign({}, item)
       this.dialogDelete = true
-      this.$emit('deleteUser', deletedItem)
     },
 
     deleteItemConfirm () {
-      this.users.splice(this.editedIndex, 1)
+      this.$emit('deleteUser', this.editedItem, this.editedIndex)
       this.closeDelete()
     },
     close () {
