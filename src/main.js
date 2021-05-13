@@ -12,6 +12,9 @@ import axios from 'axios'
 import 'leaflet/dist/leaflet.css'
 import { LMap, LMarker, LTileLayer, LTooltip, LFeatureGroup } from 'vue2-leaflet'
 import { Icon } from 'leaflet'
+import VueTour from 'vue-tour'
+
+require('vue-tour/dist/vue-tour.css')
 
 axios.defaults.withCredentials = true
 axios.defaults.baseURL = process.env.VUE_APP_BACKEND_URL
@@ -41,6 +44,8 @@ const options = {
     position: SnotifyPosition.rightTop
   }
 }
+
+Vue.use(VueTour)
 
 Vue.use(Snotify, options)
 

@@ -5,7 +5,9 @@
     p If you already have an account, you can login !{' '}
       router-link(link :to="'/login'") here
       |  (or click the head in top right corner).
-
+    p Did you miss onboarding tour? Never mind! Click !{' '}
+      a(@click="showTour") here !{' '}
+      | and take a tour one more time.
 </template>
 
 <script>
@@ -16,6 +18,12 @@ export default {
   name: 'Home',
   components: {
     HelloWorld
+  },
+  methods: {
+    showTour () {
+      this.$store.dispatch('ShowTour')
+      this.$tours.myTour.start()
+    }
   }
 }
 </script>

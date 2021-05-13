@@ -9,7 +9,7 @@ async function getAllTrackers () {
     }
   }
 
-  return await axios.get('/trackers', config)
+  return await axios.get('/tracker/list', config)
     .then(response => {
       console.log(response.data.data)
       return response.data.data
@@ -47,8 +47,14 @@ async function newTracker (tracker) {
 }
 
 async function deleteTracker (tracker) {
+  const config = {
+    params: {
+      id: tracker.id
+    }
+  }
+
   let res = null
-  await axios.post('/tracker/delete', tracker).then(response => {
+  await axios.delete('/tracker', config).then(response => {
     res = response.data
   }).catch(error => {
     if (error.response !== undefined) {
@@ -69,7 +75,7 @@ async function updateTracker (tracker) {
   const config = {
   }
   let res = null
-  await axios.post('/tracker', tracker, config).then(response => {
+  await axios.put('/tracker', tracker, config).then(response => {
     res = response.data
   }).catch(error => {
     if (error.response !== undefined) {
@@ -86,9 +92,9 @@ async function updateTracker (tracker) {
   return res
 }
 
-async function revokeToken (tracker, token) {
+async function revokeToken (tracker) {
   let res = null
-  await axios.post('/tracker/revoke', tracker).then(response => {
+  await axios.put('/tracker/revoke', tracker).then(response => {
     res = response.data
   }).catch(error => {
     if (error.response !== undefined) {

@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import VehiclesLive from '@/views/VehiclesLive'
 import Vehicles from '@/views/Vehicles'
 import Home from '@/views/Home'
 import Login from '@/views/Login'
@@ -9,6 +10,7 @@ import History from '@/views/History'
 import NotFound from '@/views/NotFound'
 import Trackers from '@/views/Trackers'
 import store from '../store'
+import Live from '@/views/Live'
 
 Vue.use(VueRouter)
 
@@ -16,7 +18,8 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Home
+    component: Home,
+    meta: { requiresAuth: true }
   },
   {
     path: '/about',
@@ -34,14 +37,21 @@ const routes = [
 
   },
   {
-    path: '/vehicles',
-    name: 'Vehicles',
-    component: Vehicles,
+    path: '/vehicles-live',
+    name: 'VehiclesLive',
+    component: VehiclesLive,
     meta: { requiresAuth: true }
 
   },
   {
-    path: '/user',
+    path: '/live',
+    name: 'Live',
+    component: Live,
+    meta: { requiresAuth: true }
+
+  },
+  {
+    path: '/profile',
     name: 'User',
     component: User,
     meta: { requiresAuth: true }
@@ -63,8 +73,17 @@ const routes = [
     name: 'Users',
     component: Users,
     meta: {
-      requiresAuth: true,
-      roles: ['READER']
+      requiresAuth: true
+      // roles: ['READER', 'ADMIN']
+    }
+  },
+  {
+    path: '/vehicles',
+    name: 'Vehicles',
+    component: Vehicles,
+    meta: {
+      requiresAuth: true
+      // roles: ['READER', 'ADMIN']
     }
   },
   {
@@ -88,22 +107,28 @@ const router = new VueRouter({
 
 router.beforeEach((to, from, next) => {
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    if (to.meta.roles) { // route require some role(s)
-      let isAuthorized = true
-      to.meta.roles.forEach(role => {
-        if (!store.getters.StateUser.roles.includes(role)) {
-          isAuthorized = false
-        }
-      })
-      if (isAuthorized) {
-        next()
-        return
-      } else {
-        next('/unauthorized')
-        return
-      }
+    if (store.getters.isExpired) {
+      store.dispatch('LogOut')
+      next('/login')
+      return
     }
-    if (store.getters.isAuthenticated) {
+    // if (to.meta.roles) { // route require some role(s)
+    //   let isAuthorized = true
+    //   to.meta.roles.forEach(role => {
+    //     if (!store.getters.StateUser.roles.includes(role)) {
+    //       isAuthorized = false
+    //     }
+    //   })
+    //   if (isAuthorized) {
+    //     next()
+    //     return
+    //   } else {
+    //     next('/unauthorized')
+    //     return
+    //   }
+    // }
+    if (store.getters.isAuthenticated && !store.getters.isExpired) {
+      store.dispatch('RefreshToken').then()
       next()
       return
     }

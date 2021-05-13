@@ -22,7 +22,7 @@
 <script>
 import * as api from '@/api/tracker'
 import * as vehicleApi from '@/api/vehicle'
-import TrackerList from '@/components/TrackerList'
+import TrackerList from '@/components/trackers/TrackerList'
 
 export default {
   name: 'Trackers',
@@ -63,8 +63,9 @@ export default {
     async persistTracker (tracker) {
       api.newTracker(tracker).then(r => {
         this.trackers.push(r)
+        this.$snotify.success('Tracker ' + tracker.name + ' successfully created.')
       }).catch(e => {
-        this.$snotify.error('Creating tracker error: ' + e.toString())
+        this.$snotify.error(e.message)
         console.error(e)
       })
     },
@@ -80,7 +81,7 @@ export default {
     async deleteTracker (tracker, index) {
       api.deleteTracker(tracker).then(_ => {
         this.trackers.splice(index, 1)
-        this.$snotify.success('Tracker ' + tracker.name + ' successfully deleted.')
+        this.$snotify.warning('Tracker ' + tracker.name + ' successfully deleted.')
       }).catch(e => {
         this.$snotify.error('Deleting tracker error: ' + e.toString())
         console.error(e)

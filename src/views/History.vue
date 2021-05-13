@@ -1,30 +1,46 @@
 <template lang="pug">
   v-container(fluid)
+    v-tour(name="historyTour" :steps="steps" :callbacks="callbacks")
     v-row(no-gutters justify="space-around")
       v-col(cols="12" md="3" xs="12" sm="12")
-        v-date-picker(
-          color="primary"
-          v-model="dates"
-          range
-          full-width
-          @change="dateSelected"
-        )
+        v-menu(style="z-index:9999;" ref="menu" v-model="dialogMenu" :close-on-content-click='false' :return-value.sync="dates" transition='scale-transition' offset-y='' min-width='auto')
+          template(v-slot:activator='{ on, attrs }')
+            v-text-field(v-model="dateRangeText" label='Date' prepend-icon='mdi-calendar' readonly='' v-bind='attrs' v-on='on' )
+            div(id="v-history-0")
+          v-date-picker(
+            color="primary"
+            v-model="dates"
+            :events="daysWithTrack"
+            :picker-date.sync="monthInScope"
+            range
+            no-title
+            @change="dateSelected" scrollable='')
         v-text-field(
-          v-model="dateRangeText"
-          label="Date range"
-          prepend-icon="mdi-calendar"
-          readonly)
-        v-text-field(
+          id="v-history-1"
           v-model="(totalDistance / 1000).toFixed(2)+ ' km'"
           label="Total distance"
           prepend-icon="mdi-map-marker-distance"
           readonly)
+        v-data-table.elevation-1(
+          id="v-history-2"
+          dense
+          :headers='tracksHeaders'
+          :items="tracks"
+          @click:row="loadTrack"
+        )
+          template(v-slot:item.actions="{ item }")
+            v-icon(
+              id="v-history-3"
+              small
+              class="mr-2"
+              @click="downloadItem(item)"
+            ) mdi-download
 
       v-col(cols="12" md="9" xs="12" sm="12")
-        div(class="map")
+        div(v-if="showMap" class="map")
           l-map(
             ref="mymap"
-            style="height: 85vh"
+            style="height: 93vh"
             :zoom="zoom"
             :center="center"
             :bounds="bounds")
@@ -87,6 +103,8 @@ import {
 } from 'vue2-leaflet'
 import { icon, latLng, latLngBounds } from 'leaflet'
 import * as api from '@/api/vehicle'
+import * as apiUtils from '@/api/api'
+import axios from 'axios'
 
 export default {
   name: 'Vehicle',
@@ -107,6 +125,26 @@ export default {
   },
   data () {
     return {
+      showMap: true,
+      tracksHeaders: [
+        {
+          text: 'Date',
+          align: 'start',
+          sortable: true,
+          value: 'track.date'
+        },
+        {
+          text: 'Time',
+          align: 'start',
+          sortable: true,
+          value: 'track.time'
+        },
+        {
+          text: 'Actions',
+          sortable: false,
+          value: 'actions'
+        }
+      ],
       zoom: 7,
       center: latLng(49.7437572, 15.3386383),
       bounds: latLngBounds(latLng(49.7437572, 15.3386383), latLng(49.7437572, 15.3386383)),
@@ -136,27 +174,106 @@ export default {
       polylines: [],
       markers: [],
       points: [],
+      dialogMenu: null,
+      activeDates: [],
+      monthInScope: null,
       dates: ['', ''],
       lastDates: ['', ''],
       vehicleId: null,
       totalDistance: 0,
       radius: 2,
-      waypointsSwitch: true,
+      waypointsSwitch: false,
       loadingTracks: false,
-      mapRef: null
+      mapRef: null,
+      tracks: [],
+      steps: [
+        {
+          target: '#v-history-0',
+          header: {
+            title: 'Select range'
+          },
+          before: type => new Promise((resolve, reject) => {
+            setTimeout(resolve, 250)
+          }),
+          content: 'Click here to select a day range to view vehicle history'
+        },
+        {
+          target: '#v-history-1',
+          header: {
+            title: 'Range'
+          },
+          content: 'If you want to show current position, press this circle button.'
+        },
+        {
+          target: '#v-history-2',
+          header: {
+            title: 'Tracks'
+          },
+          before: type => new Promise((resolve, reject) => {
+            this.tracks.push({ track: { date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString() } })
+            resolve()
+          }),
+          content: 'If you click this map button, you will be redirect to page for browsing vehicle history.'
+        },
+        {
+          target: '#v-history-3',
+          header: {
+            title: 'Download GPX'
+          },
+          params: {
+            highlight: true
+          },
+          content: 'Here you can download GPX export of the track.'
+        },
+        {
+          target: '#v-history-2',
+          header: {
+            title: 'End'
+          },
+          before: type => new Promise((resolve, reject) => {
+            this.tracks = []
+            resolve()
+          }),
+          content: 'You finish this tour. You can now enjoy this application.'
+        }
+      ]
     }
+  },
+  updated () {
+
   },
   mounted () {
     const map = this.$refs.mymap.mapObject
     map.addControl(new window.L.Control.Fullscreen())
+    this.$nextTick(() => {
+      if (this.isNew) {
+        this.$tours.historyTour.start()
+      }
+    })
   },
-  watch: {},
+  watch: {
+    monthInScope (date) {
+      const [year, month] = date.split('-')
+      apiUtils.activeDates(this.vehicleId, month, year).then(days => {
+        this.activeDates = days
+      })
+    }
+  },
   computed: {
     dateRangeText () {
       return this.dates.join(' ~ ')
+    },
+    isNew () {
+      return this.$store.getters.showHistoryTour
+    },
+    callbacks () {
+      return {
+        onFinish: this.hideTour,
+        onSkip: this.hideTour
+      }
     }
   },
-  created: function () {
+  created: async function () {
     this.vehicleId = this.$route.query.id
     if (this.vehicleId === undefined) {
       this.$snotify.error('Vehicle ID must be provided')
@@ -173,20 +290,29 @@ export default {
       this.loadingTracks = true
       api.vehicleHistory(this.vehicleId, this.dates[0], this.dates[1]).then(response => {
         this.loadingTracks = false
-
-        if (response.length === 0) {
+        this.dialogMenu = false
+        const positions = response.positions
+        const tracks = response.tracks
+        if (positions.length === 0) {
           this.$snotify.warning('No data available for the selected date period:\n' + this.dateRangeText)
           return
         }
         this.polylines = [{
           id: 'route',
-          points: response.map(point => latLng(point.latitude, point.longitude)),
+          points: positions.map(point => latLng(point.latitude, point.longitude)),
           visible: true
         }]
-        this.start = latLng(response[response.length - 1].latitude, response[response.length - 1].longitude)
-        this.end = latLng(response[0].latitude, response[0].longitude)
-        this.addMarkers(response)
+        this.start = latLng(positions[positions.length - 1].latitude, positions[positions.length - 1].longitude)
+        this.end = latLng(positions[0].latitude, positions[0].longitude)
+        this.addMarkers(positions)
         this.fitPolyline()
+        tracks.map(t => {
+          const date = Date.parse(t.track.timestamp)
+          t.track.timestamp = new Date(date).toLocaleString('cs-CZ')
+          t.track.date = new Date(date).toLocaleDateString('cs-CZ')
+          t.track.time = new Date(date).toLocaleTimeString('cs-CZ')
+        })
+        this.tracks = tracks
       })
     },
     addMarkers: function (payload) {
@@ -208,6 +334,48 @@ export default {
     },
     fitPolyline: function () {
       this.bounds = latLngBounds(this.polylines[0].points)
+    },
+    daysWithTrack (date) {
+      const [, , day] = date.split('-')
+      return this.activeDates.includes(parseInt(day, 10))
+    },
+    async loadTrack (track) {
+      this.loadingTracks = true
+      api.trackPositions(track.track.id).then(response => {
+        console.log(response)
+        this.loadingTracks = false
+        const positions = response
+        this.polylines = [{
+          id: 'route',
+          points: positions.map(point => latLng(point.latitude, point.longitude)),
+          visible: true
+        }]
+        this.start = latLng(positions[positions.length - 1].latitude, positions[positions.length - 1].longitude)
+        this.end = latLng(positions[0].latitude, positions[0].longitude)
+        this.addMarkers(positions)
+        this.fitPolyline()
+      })
+    },
+    downloadItem (track) {
+      console.log(track.track.id)
+      axios({
+        url: '/gpx',
+        method: 'GET',
+        responseType: 'blob',
+        params: { id: track.track.id }
+      }).then((response) => {
+        const fileURL = window.URL.createObjectURL(new Blob([response.data]))
+        const fileLink = document.createElement('a')
+
+        fileLink.href = fileURL
+        fileLink.setAttribute('download', 'export.gpx')
+        document.body.appendChild(fileLink)
+
+        fileLink.click()
+      })
+    },
+    hideTour () {
+      this.$store.dispatch('HideHistoryTour')
     }
   }
 }

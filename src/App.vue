@@ -1,86 +1,42 @@
-<template>
-  <v-app>
-    <v-app-bar app color="primary" dark elevation="0">
-      <v-app-bar-nav-icon @click.stop="sidebarMenu = !sidebarMenu"></v-app-bar-nav-icon>
-      <v-spacer></v-spacer>
-      <v-btn icon :to="'/login'">
-        <v-icon>mdi-account</v-icon>
-      </v-btn>
-    </v-app-bar>
-    <v-navigation-drawer
-      v-if="isLoggedIn"
-      v-model="sidebarMenu"
-      app
-      floating
-      :permanent="sidebarMenu"
-      :mini-variant.sync="mini"
-    >
-      <v-list dense color="primary" dark>
-        <v-list-item>
-          <v-list-item-action>
-            <v-icon @click.stop="sidebarMenu = !sidebarMenu">mdi-chevron-left</v-icon>
-          </v-list-item-action>
-          <v-list-item-content>
-            <v-list-item-title>
-              <h3 class="font-weight-thin">Vehicle tracking system</h3>
-            </v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-      <div v-if="isLoggedIn">
-        <v-list-item class="px-2" @click="toggleMini = !toggleMini">
-          <v-list-item-avatar>
-            <v-icon>mdi-account-outline</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content class="text-truncate">
-            {{ username }}
-          </v-list-item-content>
-          <v-btn icon small>
-            <v-icon>mdi-chevron-left</v-icon>
-          </v-btn>
-        </v-list-item>
-        <v-divider></v-divider>
-        <v-list>
-          <v-list-item v-for="item in items" :key="item.title" link :to="item.href">
-            <v-list-item-icon>
-              <v-icon color="primary">{{ item.icon }}</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title class="primary--text">{{ item.title }}</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-      </div>
-    </v-navigation-drawer>
-    <v-main>
-      <v-container class="px-4 py-0 fill-height" fluid>
-        <v-row class="fill-height">
-          <v-col>
-            <transition name="fade">
-              <router-view></router-view>
-            </transition>
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-main>
-    <v-footer>
-      ...
-    </v-footer>
-
-    <vue-snotify/>
-  </v-app>
+<template lang="pug">
+  v-app
+    v-navigation-drawer(v-if="isLoggedIn" v-bind:expand-on-hover="onHover" :mini-variant.sync="mini" v-model='sidebarMenu' app floating permanent)
+      Navigation(id="v-step-0")
+    v-main
+      v-tour(name="myTour" :steps="steps" :callbacks="callbacks")
+      v-container.px-0.py-0.pa-0.ma-0(fluid full-height)
+        v-row.fill-height
+          v-col
+            transition(name='fade')
+              router-view
+    v-footer(padless)
+      v-col(
+        class="text-center"
+        cols="12") {{ new Date().getFullYear() }} — <strong>Vehicle tracking system</strong>
+    vue-snotify
 </template>
 
 <script>
-// import HelloWorld from './components/HelloWorld'
+import Navigation from '@/components/Navigation'
 
 export default {
   name: 'App',
 
   components: {
-    // HelloWorld
+    Navigation
   },
-
+  mounted () {
+    if (this.isNew && this.isLoggedIn) {
+      this.$tours.myTour.start()
+    }
+  },
+  watch: {
+    isLoggedIn (newVal) {
+      if (this.isNew && newVal) {
+        this.$tours.myTour.start()
+      }
+    }
+  },
   computed: {
     isLoggedIn: function () {
       return this.$store.getters.isAuthenticated
@@ -88,34 +44,152 @@ export default {
     username: function () {
       return this.$store.getters.StateUser.username
     },
-    mini () {
-      return (this.$vuetify.breakpoint.smAndDown) || this.toggleMini
+    smallScreen () {
+      return this.$vuetify.breakpoint.mdAndDown
+    },
+    isNew () {
+      return this.$store.getters.showTour
+    },
+    callbacks () {
+      return {
+        onFinish: this.hideTour,
+        onSkip: this.hideTour
+      }
     }
   },
-
+  data: function () {
+    return {
+      appTitle: 'Vehicle tracking system',
+      sidebarMenu: true,
+      toggleMini: true,
+      mini: true,
+      onHover: true,
+      steps: [
+        {
+          target: '#v-step-0', // We're using document.querySelector() under the hood
+          header: {
+            title: 'Get Started'
+          },
+          before: type => new Promise((resolve, reject) => {
+            // Time-consuming UI/async operation here
+            setTimeout(resolve, 250)
+          }),
+          content: 'There is a menu for browsing the application! Don\'t be scared, it\'s easy!'
+        },
+        {
+          target: '#v-step-1',
+          header: {
+            title: 'Login'
+          },
+          params: {
+            highlight: true
+          },
+          before: () => Promise.resolve().then(data => {
+            this.onHover = false
+            this.mini = false
+          }),
+          content: 'If you click this icon, you will be redirect to login page. Once you are logged in, the same button is used for logout.'
+        },
+        {
+          target: '#v-step-1-1',
+          header: {
+            title: 'Profile'
+          },
+          params: {
+            highlight: true
+          },
+          content: 'Click on your name to view your profile. If you are not logged in, you will be prompted to enter your credentials.'
+        },
+        {
+          target: '#v-step-2',
+          header: {
+            title: 'Live positions'
+          },
+          params: {
+            highlight: true
+          },
+          before: () => Promise.resolve().then(data => {
+            this.onHover = true
+            this.mini = true
+          }),
+          content: 'Live positions enable show you where your vehicles are right now.'
+        },
+        {
+          target: '#v-step-3',
+          header: {
+            title: 'Vehicles'
+          },
+          params: {
+            highlight: true
+          },
+          content: 'Here you can find list of vehicles. You can also edit them here and create new ones.'
+        },
+        {
+          target: '#v-step-4',
+          header: {
+            title: 'Trackers'
+          },
+          params: {
+            highlight: true
+          },
+          content: 'Here you can find list of trackers. You can also edit them here and create new ones.'
+        },
+        {
+          target: '#v-step-5',
+          header: {
+            title: 'Users'
+          },
+          params: {
+            highlight: true
+          },
+          content: 'Here you can find list of users. You can also edit them here and create new ones.'
+        }
+      ],
+      items: [
+        {
+          title: 'Live positions',
+          href: '/vehicles-live',
+          icon: 'mdi-map-search'
+        },
+        {
+          title: 'Vehicles',
+          href: '/vehicles',
+          icon: 'mdi-car'
+        },
+        {
+          title: 'Trackers',
+          href: '/trackers',
+          icon: 'mdi-antenna'
+        },
+        {
+          title: 'Users',
+          href: '/users',
+          icon: 'mdi-account-multiple'
+        }
+        // { title: 'Components', href: '/comp', icon: 'mdi-palette-swatch' },
+        // { title: 'Customers', href: '/customers', icon: 'mdi-account-search-outline' },
+        // { title: 'Orders', href: '/orders', icon: 'mdi-bus-clock' },
+        // { title: 'Settings', href: '/settings', icon: 'mdi-clock' }
+      ]
+    }
+  },
   methods: {
     async logout () {
       await this.$store.dispatch('LogOut')
       await this.$router.push('/login')
+    },
+    hideTour () {
+      this.$store.dispatch('HideTour')
     }
-  },
-
-  data: () => ({
-    appTitle: 'Vehicle tracking system',
-    sidebarMenu: false,
-    toggleMini: true,
-    items: [
-      { title: 'Live positions', href: '/vehicles', icon: 'mdi-map-search' },
-      { title: 'Trackers', href: '/trackers', icon: 'mdi-antenna' },
-      { title: 'Users', href: '/users', icon: 'mdi-account-multiple' }
-      // { title: 'Components', href: '/comp', icon: 'mdi-palette-swatch' },
-      // { title: 'Customers', href: '/customers', icon: 'mdi-account-search-outline' },
-      // { title: 'Orders', href: '/orders', icon: 'mdi-bus-clock' },
-      // { title: 'Settings', href: '/settings', icon: 'mdi-clock' }
-    ]
-  })
+  }
 }
 </script>
 
 <style scoped lang="scss">
+#footer {
+  text-align: center;
+}
+html {
+  overflow: hidden !important;
+}
 </style>

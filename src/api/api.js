@@ -15,20 +15,18 @@ function Position (id, latitude, longitude, speed, timestamp, trackId, vehicleId
   this.vehicleId = vehicleId
 }
 
-async function vehicleList (token) {
+async function vehicleList () {
   const config = {
-    headers: {
-      authorization: token
-    },
     params: {
       page: null,
       'page-size': null
     }
   }
   const res = new Map()
-  await axios.get('/vehicles', config).then(response => {
+  await axios.get('/vehicle/list', config).then(response => {
     const payload = response.data
-    payload.data.forEach(a => res.set(a.vehicle.id, a.vehicle))
+    payload.data.forEach(a => res.set(a.vehicle.id, a))
+    // payload.data.forEach(a => res.set(a.vehicle.id, a.vehicle))
   }).catch(error => {
     console.log(error)
     if (error.response !== undefined) {
@@ -46,11 +44,8 @@ async function vehicleList (token) {
   return res
 }
 
-async function lastPosition (vehicle, token) {
+async function lastPosition (vehicle) {
   const config = {
-    headers: {
-      authorization: token
-    },
     params: {
       id: vehicle.id
     }
@@ -64,6 +59,8 @@ async function lastPosition (vehicle, token) {
         switch (error.response.status) {
           case 403:
             throw new ApiException('You don\'t have permissions to view vehicle positions history!', error.response.status)
+          case 404:
+            throw new ApiException('No positions found.', error.response.status)
           default:
             throw new ApiException('Unknown API error', error.response.status)
         }
@@ -73,4 +70,21 @@ async function lastPosition (vehicle, token) {
     })
 }
 
-export { ApiException, Position, vehicleList, lastPosition }
+async function activeDates (vehicleId, month, year) {
+  const config = {
+    params: {
+      id: vehicleId,
+      month: month,
+      year: year
+    }
+  }
+  let res = []
+  await axios.get('/vehicle/active', config).then(response => {
+    res = response.data
+  }).catch(error => {
+    console.log(error)
+  })
+  return res
+}
+
+export { ApiException, Position, vehicleList, lastPosition, activeDates }
